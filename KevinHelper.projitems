@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>ba199e36-6c69-4a14-a786-d27268d83feb</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>KevinHelper</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)DateHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)HashCalculator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JobWalkDirectories.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ShellUtilities.cs" />
+  </ItemGroup>
+</Project>
