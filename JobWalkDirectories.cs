@@ -7,8 +7,25 @@ using System.Threading.Tasks;
 
 namespace KevinHelper
 {
+    public enum Operation
+    {
+        NOCHANGE,
+        NEW,
+        DELETE,
+        CHANGED
+    }
+    public interface IKParent : IComparable<IKParent>
+    {
+        bool IsFolder { get; set; }
+        List<IKParent> Children { get; set; }
+        IKParent Parent { get; set; }
+        Operation operation { get; set; }
+
+        IKParent CreateNewInstance();
+    }
+
     [Serializable()]
-    public class KFile
+    public class KFile: IKParent
     {
         public string Name { get; set; }
         public long? Size { get; set; }
@@ -19,12 +36,12 @@ namespace KevinHelper
         public string Checksum { get; set; }
         public int CountFile { get; set; }
 
-        List<KFile> _children;
-        public List<KFile> Children
+        List<IKParent> _children;
+        public List<IKParent> Children
         {
             get
             {
-                _children = _children ?? new List<KFile>();
+                _children = _children ?? new List<IKParent>();
                 return _children;
             }
             set
@@ -33,9 +50,18 @@ namespace KevinHelper
             }
         }
 
-        public KFile Parent { get; set; }
-        public bool Highlight { get; set; }
+        public IKParent Parent { get; set; }
+        public Operation operation { get; set; }
 
+        public IKParent CreateNewInstance()
+        {
+            return new KFile { Name = Name, IsFolder = IsFolder, CountFile = CountFile, Size = Size };
+        }
+
+        public int CompareTo(IKParent other)
+        {
+            return string.Compare(Name, ((KFile)other).Name, StringComparison.CurrentCultureIgnoreCase);
+        }
     }
     public class JobWalkDirectories
     {
@@ -213,8 +239,8 @@ namespace KevinHelper
                     })
                 );
 
-                file.Size = file.Children.Sum(i => i.Size);
-                file.CountFile = file.Children.Sum(i => i.CountFile);
+                file.Size = file.Children.Sum(i => ((KFile)i).Size);
+                file.CountFile = file.Children.Sum(i => ((KFile)i).CountFile);
             }
             catch (UnauthorizedAccessException) { }
 

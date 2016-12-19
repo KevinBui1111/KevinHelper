@@ -12,6 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)DateHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HashCalculator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)JobWalkDirectories.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ListComparer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ShellUtilities.cs" />
   </ItemGroup>
 </Project>
