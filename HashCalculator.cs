@@ -116,8 +116,10 @@ namespace KevinHelper
 
     class HashCalculator
     {
-        public event Action<string, int> resultCallback;
-        public event Action<int> progressCallback;
+        //public event Action<string, int, Exception> resultCallback;
+        //public event Action<string, int> progressCallback;
+        public IProgress<object[]> resultCallback;
+        public IProgress<object[]> progressIndicator;
 
         public List<string> files = new List<string>(5);
 
@@ -129,6 +131,12 @@ namespace KevinHelper
         private long readSize;
         private HashAlgorithm hashAlg;
         private CancellationTokenSource cancellationTokenSource;
+        private bool isRunning;
+
+        public HashCalculator()
+        {
+            Reset();
+        }
 
         public async Task<string[]> ComputeHashAsync()
         {
@@ -147,24 +155,37 @@ namespace KevinHelper
                     throw new Exception("Unknow Hash type");
             }
 
-            readSize = 0;
-            totalSize = files.Sum(f => new FileInfo(f).Length);
+            totalSize = readSize = 0;
+            foreach (var f in files)
+            {
+                try { totalSize += new FileInfo(f).Length; }
+                catch { }
+            }
+            //totalSize = files.Sum(f => new FileInfo(f).Length);
 
             cancellationTokenSource = new CancellationTokenSource();
             return await Task.Run(() =>
             {
+                isRunning = true;
                 List<string> result = new List<string>(5);
 
                 for (int i = 0; i < files.Count; ++i)
                 {
-                    string res = HashFile(files[i]);
+                    string res = null;
+                    Exception exc = null;
+
+                    try { res = HashFile(files[i]); }
+                    catch (Exception ex) { exc = ex; }
+
                     result.Add(res);
-                    if (resultCallback != null) resultCallback(res, i);
+                    resultCallback?.Report(new object[] { res, i, exc });
 
                     // Wait for the controlling thread to signal.
                     pauseEvent.WaitOne();
                     if (cancellationTokenSource.Token.IsCancellationRequested) break;
                 }
+
+                isRunning = false;
 
                 return result.ToArray();
             });
@@ -190,6 +211,7 @@ namespace KevinHelper
         {
             pauseEvent.Set();
         }
+        public bool IsRunning { get { return isRunning; } }
         #endregion
 
         private string HashFile(string szFilename)
@@ -208,7 +230,8 @@ namespace KevinHelper
                     hashAlg.TransformBlock(buffer, 0, nCount, null, 0);
 
                     readSize += nCount;
-                    if (progressCallback != null) progressCallback((int)(100 * readSize / totalSize));
+                    //progressCallback?.Invoke(szFilename, (int)(100 * readSize / totalSize));
+                    progressIndicator?.Report(new object[] { szFilename, (int)(100 * readSize / totalSize) });
 
                     // Wait for the controlling thread to signal.
                     pauseEvent.WaitOne();
@@ -233,6 +256,7 @@ namespace KevinHelper
 
         public enum AlgorithmType
         {
+            NONE,
             CRC32,
             MD5,
             SHA1
