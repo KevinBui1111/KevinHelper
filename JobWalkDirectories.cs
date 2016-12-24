@@ -77,25 +77,40 @@ namespace KevinHelper
                 progressIndicator = new Progress<string>(value);
             }
         }
-        public Action JobCompleted;
+        public Action<FileInfo> GotAFile
+        {
+            set
+            {
+                progressGotAFile = new Progress<FileInfo>(value);
+            }
+        }
+        public Action<string> GotAFolder
+        {
+            set
+            {
+                progressGotAFolder = new Progress<string>(value);
+            }
+        }
 
-        public event Action<JobWalkDirectories, FileInfo> GotAFile;
-        public event Action<JobWalkDirectories, string> GotAFolder;
-
+        private IProgress<string> progressIndicator, progressGotAFolder;
+        private IProgress<FileInfo> progressGotAFile;
         private ManualResetEvent _pauseEvent = new ManualResetEvent(true);
-        private IProgress<string> progressIndicator;
         private CancellationTokenSource cancellationTokenSource;
+        private List<FileInfo> resultFiles;
 
         public JobWalkDirectories()
         {
+            resultFiles = new List<FileInfo>();
             exceptionFol = new List<string>();
             m_ext = new string[] { ".*" };
             m_bSystem = true;
         }
 
-        public async Task WalkThroughAsync()
+        public async Task<List<FileInfo>> WalkThroughAsync()
         {
+            resultFiles.Clear();
             cancellationTokenSource = new CancellationTokenSource();
+
             await Task.Run(() =>
             {
                 foreach (SearchPath item in searchFols)
@@ -107,7 +122,7 @@ namespace KevinHelper
                 }
             });
 
-            if (JobCompleted != null) JobCompleted();
+            return resultFiles;
         }
         public void Cancel()
         {
@@ -133,15 +148,14 @@ namespace KevinHelper
             _pauseEvent.WaitOne();
             if (cancellationTokenSource.Token.IsCancellationRequested) return;
 
-            if (GotAFolder != null)
-                GotAFolder(this, sPath);
+            progressGotAFolder?.Report(sPath);
 
             bool valid = true;
 
             // Get Sub Folders.
             try
             {
-                if (level < 3 && progressIndicator != null) progressIndicator.Report(sPath);
+                if (level < 3) progressIndicator?.Report(sPath);
 
                 String[] subFolders = Directory.GetDirectories(sPath);
                 foreach (string dir in subFolders)
@@ -190,8 +204,11 @@ namespace KevinHelper
                     }
                 }
 
-                if (matchfiletype && GotAFile != null)
-                    GotAFile(this, file);
+                if (matchfiletype)
+                {
+                    progressGotAFile?.Report(file);
+                    resultFiles.Add(file);
+                }
             }
         }
 

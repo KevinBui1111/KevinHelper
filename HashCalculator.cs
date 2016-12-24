@@ -121,7 +121,7 @@ namespace KevinHelper
         public IProgress<object[]> resultCallback;
         public IProgress<object[]> progressIndicator;
 
-        public List<string> files = new List<string>(5);
+        public List<string> InputFiles = new List<string>(5);
 
         public AlgorithmType algorithm { get; set; }
 
@@ -129,6 +129,7 @@ namespace KevinHelper
         private ManualResetEvent pauseEvent;
         private long totalSize;
         private long readSize;
+        private int percent;
         private HashAlgorithm hashAlg;
         private CancellationTokenSource cancellationTokenSource;
         private bool isRunning;
@@ -156,26 +157,31 @@ namespace KevinHelper
             }
 
             totalSize = readSize = 0;
-            foreach (var f in files)
+            foreach (var f in InputFiles.ToArray())
             {
-                try { totalSize += new FileInfo(f).Length; }
-                catch { }
+                if (File.Exists(f))
+                    totalSize += new FileInfo(f).Length;
             }
             //totalSize = files.Sum(f => new FileInfo(f).Length);
 
+            pauseEvent = new ManualResetEvent(true);
+            percent = 0;
             cancellationTokenSource = new CancellationTokenSource();
             return await Task.Run(() =>
             {
                 isRunning = true;
                 List<string> result = new List<string>(5);
 
-                for (int i = 0; i < files.Count; ++i)
+                for (int i = 0; i < InputFiles.Count; ++i)
                 {
                     string res = null;
                     Exception exc = null;
 
-                    try { res = HashFile(files[i]); }
-                    catch (Exception ex) { exc = ex; }
+                    if (File.Exists(InputFiles[i]))
+                        try { res = HashFile(InputFiles[i]); }
+                        catch (Exception ex) { exc = ex; }
+                    else
+                        exc = new IOException("File not found.");
 
                     result.Add(res);
                     resultCallback?.Report(new object[] { res, i, exc });
@@ -186,7 +192,7 @@ namespace KevinHelper
                 }
 
                 isRunning = false;
-
+                Console.WriteLine("finsih");
                 return result.ToArray();
             });
         }
@@ -194,8 +200,7 @@ namespace KevinHelper
         #region Control thread
         public void Reset()
         {
-            files.Clear();
-            pauseEvent = new ManualResetEvent(true);
+            InputFiles.Clear();
         }
 
         public void Stop()
@@ -230,8 +235,13 @@ namespace KevinHelper
                     hashAlg.TransformBlock(buffer, 0, nCount, null, 0);
 
                     readSize += nCount;
-                    //progressCallback?.Invoke(szFilename, (int)(100 * readSize / totalSize));
-                    progressIndicator?.Report(new object[] { szFilename, (int)(100 * readSize / totalSize) });
+
+                    int new_percent = (int)(100 * readSize / totalSize);
+                    if (new_percent == 100 || new_percent > percent + 10)
+                    {
+                        percent = new_percent;
+                        progressIndicator?.Report(new object[] { szFilename, percent });
+                    }
 
                     // Wait for the controlling thread to signal.
                     pauseEvent.WaitOne();
