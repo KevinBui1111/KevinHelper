@@ -9,7 +9,7 @@ namespace KevinHelper
         public static string GetRelativePath(string filespec, string folder)
         {
             if (filespec.StartsWith(folder))
-                return filespec.Substring(folder.Length + 1);
+                return filespec.Substring(folder.Length + (folder.EndsWith(@"\") ? 0 : 1));
             else return "error";
         }
     }

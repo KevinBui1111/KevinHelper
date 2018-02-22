@@ -12,7 +12,8 @@ namespace KevinHelper
         NOCHANGE,
         NEW,
         DELETE,
-        CHANGED
+        CHANGED,
+        UNKNOWN
     }
     public interface IKParent : IComparable<IKParent>
     {

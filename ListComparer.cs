@@ -54,7 +54,8 @@ namespace KevinHelper
                     {
                         int result = compareFile(srcSubFolders[iSrc], desSubFolders[iDes]);
                         resItem = srcSubFolders[iSrc];
-                        resItem.operation = result == 0 ? Operation.NOCHANGE : Operation.CHANGED;
+                        resItem.operation = result == 0 ? Operation.NOCHANGE :
+                            result == 1 ? Operation.CHANGED : Operation.UNKNOWN;
                     }
                     else
                     {
@@ -77,6 +78,7 @@ namespace KevinHelper
                 for (int i = iDes; i < desSubFolders.Count; ++i)
                 {
                     desSubFolders[i].operation = Operation.DELETE;
+                    desSubFolders[i].Parent = res;
                     res.Children.Add(desSubFolders[i]);
                     res.operation = Operation.CHANGED;
                 }
@@ -85,6 +87,7 @@ namespace KevinHelper
                 for (int i = iSrc; i < srcSubFolders.Count; ++i)
                 {
                     srcSubFolders[i].operation = Operation.NEW;
+                    srcSubFolders[i].Parent = res;
                     res.Children.Add(srcSubFolders[i]);
                     res.operation = Operation.CHANGED;
                 }
