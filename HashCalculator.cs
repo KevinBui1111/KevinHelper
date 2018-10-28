@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -130,6 +131,8 @@ namespace KevinHelper
         private long totalSize;
         private long readSize;
         private int percent;
+        private Stopwatch stopwatch;
+        private long elapsedMilliseconds;
         private HashAlgorithm hashAlg;
         private CancellationTokenSource cancellationTokenSource;
         private bool isRunning;
@@ -166,6 +169,8 @@ namespace KevinHelper
 
             pauseEvent = new ManualResetEvent(true);
             percent = 0;
+            stopwatch = Stopwatch.StartNew();
+            elapsedMilliseconds = 0;
             cancellationTokenSource = new CancellationTokenSource();
             return await Task.Run(() =>
             {
@@ -178,7 +183,7 @@ namespace KevinHelper
                     Exception exc = null;
 
                     if (File.Exists(InputFiles[i]))
-                        try { res = HashFile(InputFiles[i]); }
+                        try { res = HashFile(InputFiles[i], i); }
                         catch (Exception ex) { exc = ex; }
                     else
                         exc = new IOException("File not found.");
@@ -219,7 +224,7 @@ namespace KevinHelper
         public bool IsRunning { get { return isRunning; } }
         #endregion
 
-        private string HashFile(string szFilename)
+        private string HashFile(string szFilename, int index)
         {
             hashAlg.Initialize();
 
@@ -237,10 +242,11 @@ namespace KevinHelper
                     readSize += nCount;
 
                     int new_percent = (int)(100 * readSize / totalSize);
-                    if (new_percent == 100 || new_percent > percent + 10)
+                    if (new_percent == 100 || stopwatch.ElapsedMilliseconds - elapsedMilliseconds > 500)
                     {
+                        elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
                         percent = new_percent;
-                        progressIndicator?.Report(new object[] { szFilename, percent });
+                        progressIndicator?.Report(new object[] { szFilename, percent, index });
                     }
 
                     // Wait for the controlling thread to signal.

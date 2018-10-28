@@ -8,7 +8,7 @@ namespace KevinHelper
 {
     class ListComparer
     {
-        public Func<IKParent, IKParent, int> compareFile { get; set; }
+        public Func<IKParent, IKParent, Operation> compareFile { get; set; }
         public CancellationToken cancellationToken { get; set; }
 
         public IKParent CompareFolder(IKParent source, IKParent destination)
@@ -52,10 +52,8 @@ namespace KevinHelper
                         resItem = CompareFolder(srcSubFolders[iSrc], desSubFolders[iDes]);
                     else if (compareFile != null)
                     {
-                        int result = compareFile(srcSubFolders[iSrc], desSubFolders[iDes]);
                         resItem = srcSubFolders[iSrc];
-                        resItem.operation = result == 0 ? Operation.NOCHANGE :
-                            result == 1 ? Operation.CHANGED : Operation.UNKNOWN;
+                        resItem.operation = compareFile(srcSubFolders[iSrc], desSubFolders[iDes]);
                     }
                     else
                     {
