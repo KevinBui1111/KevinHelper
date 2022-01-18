@@ -15,6 +15,8 @@ using System.Windows.Forms;
 using BrightIdeasSoftware;
 using System.IO;
 
+namespace KevinHelper
+{
     /// <summary>
     /// This helper class allows listviews and tree views to use image from the system image list.
     /// </summary>
@@ -23,15 +25,19 @@ using System.IO;
     /// special handling since they have two image lists which need to be kept in sync.</remarks>
     public class SysImageListHelper
     {
-        protected ImageList.ImageCollection SmallImageCollection {
-            get {
+        protected ImageList.ImageCollection SmallImageCollection
+        {
+            get
+            {
                 if (this.listView != null)
                     return this.listView.SmallImageList.Images;
                 return null;
             }
         }
-        protected ImageList SmallImageList {
-            get {
+        protected ImageList SmallImageList
+        {
+            get
+            {
                 if (this.listView != null)
                     return this.listView.SmallImageList;
                 return null;
@@ -48,7 +54,8 @@ using System.IO;
         /// has image lists installed, they <b>must</b> be of the same length.</remarks>
         public SysImageListHelper(ObjectListView listView)
         {
-            if (listView.SmallImageList == null) {
+            if (listView.SmallImageList == null)
+            {
                 listView.SmallImageList = new ImageList();
                 listView.SmallImageList.ColorDepth = ColorDepth.Depth32Bit;
                 listView.SmallImageList.ImageSize = new Size(16, 16);
@@ -69,30 +76,36 @@ using System.IO;
                 path = Environment.SystemDirectory; // optimization! give all directories the same image
             else
                 if (Path.HasExtension(path))
-                    path = Path.GetExtension(path);
+                path = Path.GetExtension(path);
 
             if (this.SmallImageCollection.ContainsKey(path))
                 return this.SmallImageCollection.IndexOfKey(path);
 
-            try {
+            try
+            {
                 this.AddImageToCollection(path, ShellUtilities.GetFileIcon(path, true, true));
-            } catch (ArgumentNullException) {
+            }
+            catch (ArgumentNullException)
+            {
                 return -1;
             }
 
             return this.SmallImageCollection.IndexOfKey(path);
         }
 
-        private void AddImageToCollection(string key, Icon image) {
+        private void AddImageToCollection(string key, Icon image)
+        {
             if (SmallImageList == null)
                 return;
 
-            if (SmallImageList.ImageSize == image.Size) {
+            if (SmallImageList.ImageSize == image.Size)
+            {
                 SmallImageList.Images.Add(key, image);
                 return;
             }
 
-            using (Bitmap imageAsBitmap = image.ToBitmap()) {
+            using (Bitmap imageAsBitmap = image.ToBitmap())
+            {
                 Bitmap bm = new Bitmap(SmallImageList.ImageSize.Width, SmallImageList.ImageSize.Height);
                 Graphics g = Graphics.FromImage(bm);
                 g.Clear(SmallImageList.TransparentColor);
@@ -104,7 +117,7 @@ using System.IO;
             }
         }
     }
-    
+
     /// <summary>
     /// ShellUtilities contains routines to interact with the Windows Shell.
     /// </summary>
@@ -124,7 +137,8 @@ using System.IO;
                 flags |= SHGFI_SMALLICON;
 
             int fileAttributes = 0;
-            if (useFileType) {
+            if (useFileType)
+            {
                 flags |= SHGFI_USEFILEATTRIBUTES;
                 if (System.IO.Directory.Exists(path))
                     fileAttributes = FILE_ATTRIBUTE_DIRECTORY;
@@ -142,11 +156,11 @@ using System.IO;
 
         #region Native methods
 
-        private const int SHGFI_ICON               = 0x00100;     // get icon
-        private const int SHGFI_SMALLICON          = 0x00001;     // get small icon
-        private const int SHGFI_USEFILEATTRIBUTES  = 0x00010;     // use passed dwFileAttribute
+        private const int SHGFI_ICON = 0x00100;     // get icon
+        private const int SHGFI_SMALLICON = 0x00001;     // get small icon
+        private const int SHGFI_USEFILEATTRIBUTES = 0x00010;     // use passed dwFileAttribute
 
-        private const int FILE_ATTRIBUTE_NORMAL    = 0x00080;     // Normal file
+        private const int FILE_ATTRIBUTE_NORMAL = 0x00080;     // Normal file
         private const int FILE_ATTRIBUTE_DIRECTORY = 0x00010;     // Directory
 
         private const int MAX_PATH = 260;
@@ -154,13 +168,13 @@ using System.IO;
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         private struct SHFILEINFO
         {
-            public IntPtr hIcon; 
-            public int    iIcon; 
-            public int    dwAttributes; 
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst=MAX_PATH)]
+            public IntPtr hIcon;
+            public int iIcon;
+            public int dwAttributes;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
             public string szDisplayName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst=80)]
-            public string szTypeName; 
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+            public string szTypeName;
         }
 
         [DllImport("shell32.dll", CharSet = CharSet.Auto)]
@@ -168,3 +182,4 @@ using System.IO;
 
         #endregion
     }
+}
